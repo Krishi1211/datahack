@@ -6,5 +6,5 @@ seaborn
 openpyxl
 Image
 seaborn
-sklearn
+scikit-learn
 

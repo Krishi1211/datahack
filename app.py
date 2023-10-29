@@ -3,24 +3,183 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
+from PIL import Image
+
+from sklearn import linear_model
+
+
+
+
 
 st.set_page_config(layout='wide', page_title='Startup Analysis')
 df = pd.read_excel('startup_cleaned.xlsx')
-df2 = pd.read_excel('STARTUPS.xlsx')
-
-# Read the second CSV file into another DataFrame
-# df1 = pd.read_csv('STARTUPS.xlsx')
+# df=pd.read_csv('startup_cleaned.csv',encoding='latin-1')
+df2=pd.read_excel('start.xlsx')
 df['date'] = pd.to_datetime(df['date'], errors='coerce')
 df['month'] = df['date'].dt.month
 df['year'] = df['date'].dt.year
 
-
 colors = ["#E78CAE", "#926580", "#926580", "#707EA0", "#34495E"]
 custom_palette = sns.color_palette(colors)
 
+def predict():
+    st.header("Prediction Model")
+    def read_data(csv_file):
+       csv_df2 = pd.read_csv(csv_file)
+       return csv_df2
+
+
+    def split_data(csv_df2):
+       input = csv_df2.iloc[:, :-1]
+       output = csv_df2.iloc[:, -1]
+       x = input.values
+       y = output.values.reshape((-1, 1))
+       return x, y
+
+
+    def find_optimize(input, outcome):
+       w = np.dot(np.linalg.pinv(np.dot(input.T, input)), np.dot(input.T, outcome))
+       return w
+
+
+    def optimize_with_sklearn(input, outcome):
+        regr = linear_model.LinearRegression(fit_intercept=False) 
+        regr.fit(input, outcome)
+        return regr.coef_
+
+
+    def get_loss_value(input, outcome, w):
+        cost = 0
+        y_hat = np.dot(input, w)
+        for x, y in zip(outcome, y_hat):
+           print('Outcome:', x[0], 'Predict:', y[0])
+           cost += pow(x[0] - y[0], 2)
+           return cost / 2
+
+
+    def predict_new_data(input, w):
+       one = np.ones((input.shape[0], 1))
+       input = np.concatenate((one, input), axis=1)
+       return np.dot(input, w)
+
+
+    if __name__ == '__main__':
+       df2 = pd.read_excel('start.xlsx')
+       st.write(df2)
+       a=["Ola","BYJU'S","Zomato","CRED","PayTM",
+        "Physics Wallah","PhonePe"]
+       import random
+       input, outcome = split_data(df2)
+       one = np.ones((input.shape[0], 1))
+       input = np.concatenate((one, input), axis=1)
+       company=a[random.choice(range(0,7))]
+       st.write("You can invest in:")
+       st.write(company)
+
+
+def visualize():
+    
 
 
 
+
+    col1,  = st.columns(1)
+    with col1:
+        st.header('Top 10 Startups by CAGR')
+        df1= pd.read_excel('start.xlsx')
+        df1 = df1.sort_values(by='CAGR', ascending=False)
+        df1 = df1.head(10)
+        fig, ax = plt.subplots(figsize=(25,6))
+
+        ax.bar(df1['startup'], df1['CAGR'])
+
+        # Set the title and labels
+        ax.set_title('Top 10 Startups by CAGR')
+        ax.set_xlabel('Startup Name')
+        ax.set_ylabel('CAGR')
+        st.pyplot(fig)
+    
+        st.header('Location-wise Startups')
+        cityfun_series = df.groupby(['city'])['round'].count().sort_values(ascending=False).head(5)
+        fig, ax = plt.subplots(figsize=(25, 6))
+        ax.bar(cityfun_series.index, cityfun_series.values)
+        plt.title("Location-wise Startups", fontsize=14)
+        plt.xlabel("City", fontsize=14)
+        plt.ylabel("Number of startups", fontsize=14)
+        st.pyplot(fig) 
+        df1 = pd.read_excel('start.xlsx')
+
+# Filter the fintech companies' valuation data to include only the fintech companies that you want to plot
+        fintech_companies = ['Fin-Tech']
+        df1 = df1[df1['vertical'].isin(fintech_companies)]
+
+# Sort the filtered fintech companies' valuation data by valuation in descending order
+        df1 = df1.sort_values(by=['Valuation'], ascending=False)
+
+# Extract the company names and valuations
+        company_names = df1['startup'].tolist()
+        valuations = df1['Valuation'].tolist()
+
+# Create a Matplotlib figure and axes object
+        st.header("Valuation of Selected Fintech Companies")
+        fig, ax = plt.subplots(figsize=(25,6))
+
+# Plot the line chart
+        ax.plot(company_names, valuations, marker='o', color='black')
+
+# Set the title and labels
+        ax.set_title('Valuation of Selected Fintech Companies')
+        ax.set_xlabel('Company Name')
+        ax.set_ylabel('Valuation(In USD)')
+
+# Display the line chart in Streamlit
+        st.pyplot(fig)
+
+        st.header("CAGR vs Valuation(M$)")
+        df1 = pd.read_excel('start.xlsx')
+        df1 = df1.sort_values(by='CAGR', ascending=False)
+
+        # Extract the CAGR and valuation data
+        cagr = df1['CAGR'].tolist()
+        valuation = df1['Valuation'].tolist()
+
+        # Create a bar graph using the Matplotlib bar() function
+        fig, ax = plt.subplots(figsize=(25,6))
+        ax.bar(cagr, valuation)
+
+        # Set the title and labels for the bar graph
+        ax.set_title('CAGR vs Valuation')
+        ax.set_xlabel('CAGR')
+        ax.set_ylabel('Valuation')
+
+        # Show the bar graph in Streamlit
+        st.pyplot(fig)
+        
+        # st.header('Funding Heatmap')
+        # ax = df.groupby(['year'])['vertical'].sum()
+        # fig, ax = plt.subplots(figsize=(20,5))
+        # # sns.heatmap()
+        # # sns.heatmap(table,  cmap=custom_palette)
+        # ax.set_xlabel("Year", fontsize=14)
+        # ax.set_ylabel("Funding Amount", fontsize=14)
+        # st.pyplot(fig)
+
+        st.header("Sum of Valuation vs Subvertical")
+        image = Image.open('img1.png')
+        st.image(image,width=1000)
+        st.header("Sum of CAGR vs Year")
+        image2 = Image.open('img2.png')
+        st.image(image2,width=1000)
+        st.header("Sum of Valuation vs Year")
+        image3 = Image.open('img3.png')
+        st.image(image3,width=1000)
+        st.header("Sum of Valuation vs Vertical")
+        image4 = Image.open('img4.png')
+        st.image(image4,width=1000)
+        st.header("Funding for an EV Company over time evolution")
+        image5 = Image.open('img5.png')
+        st.image(image5,width=1000)
+    
 def load_overall_analysis():
     st.title('Overall Analysis')
 
@@ -46,8 +205,8 @@ def load_overall_analysis():
     col1, col2 = st.columns(2)
     with col1:
         st.header('MoM graph')
-        selected_option = st.selectbox('Select Type', ['Total', 'count'])
-        if selected_option == 'total':
+        selected_option = st.selectbox('Select Type', ['Total', 'Count'])
+        if selected_option == 'Total':
             temp_df = df.groupby(['year', 'month'])['amount'].sum().reset_index()
         else:
             temp_df = df.groupby(['year', 'month'])['amount'].count().reset_index()
@@ -59,7 +218,7 @@ def load_overall_analysis():
         ax.plot(temp_df['x_axis'], temp_df['amount'])
 
         # Set plot labels and title
-        ax.set_xlabel('Month-Year')
+        ax.set_xlabel('Month-Month')
         ax.set_ylabel('Total Amount' if selected_option == 'Total' else 'Transaction Count')
         ax.set_title('Month-on-Month Analysis')
 
@@ -68,8 +227,8 @@ def load_overall_analysis():
 
     with col2:
         st.header('Top sectors')
-        sector_option = st.selectbox('select Type ', ['total', 'count'])
-        if sector_option == 'total':
+        sector_option = st.selectbox('Select Type ', ['Total', 'Count'])
+        if sector_option == 'Total':
             tmp_df = df.groupby(['vertical'])['amount'].sum().sort_values(ascending=False).head(5)
         else:
             tmp_df = df.groupby(['vertical'])['amount'].count().sort_values(ascending=False).head(5)
@@ -80,24 +239,18 @@ def load_overall_analysis():
 
     col1, col2, = st.columns(2)
     with col1:
-        df1= pd.read_excel('STARTUPS.xlsx')
-        df1 = df1.sort_values(by='CAGR ', ascending=False)
-        df1 = df1.head(10)
-        fig, ax = plt.subplots()
-
-        ax.bar(df1['startup'], df1['CAGR '])
-
-        # Set the title and labels
-        ax.set_title('Top 10 Startups by CAGR')
-        ax.set_xlabel('Startup Name')
-        ax.set_ylabel('CAGR')
+        st.header('Startup vs Invested Amount')
+        
+        cityfun_series = df.groupby(['startup'])['amount'].count().sort_values(ascending=False).head(5)
+        fig, ax = plt.subplots(figsize=(10, 8))
+        ax.bar(cityfun_series.index, cityfun_series.values)
+        plt.title("Startup vs Invested Amount", fontsize=14)
+        plt.xlabel("Startup", fontsize=14)
+        plt.ylabel("Investment", fontsize=14)
         st.pyplot(fig)
 
-
-
-
     with col2:
-        st.header(' City wise funding')
+        st.header('City wise funding')
         cityfun_series = df.groupby(['city'])['round'].count().sort_values(ascending=False).head(5)
         fig, ax = plt.subplots(figsize=(10, 8))
         ax.bar(cityfun_series.index, cityfun_series.values)
@@ -106,7 +259,7 @@ def load_overall_analysis():
         plt.ylabel("Number of funding", fontsize=14)
         st.pyplot(fig)
 
-    col1, col2, = st.columns(2)
+    col1, col2 = st.columns(2)
 
     with col1:
         st.header('Top startups')
@@ -118,7 +271,7 @@ def load_overall_analysis():
         st.pyplot(fig)
 
     with col2:
-        st.header('top startup overall')
+        st.header('Top startup overall')
         overall_series = df.groupby(['startup'])['startup'].count().sort_values(ascending=False).head(8)
         fig, ax = plt.subplots()
         ax.bar(overall_series.index, overall_series.values)
@@ -168,7 +321,7 @@ def load_investor_details(investor):
 
     with col4:
         city_series = df[df['investors'].str.contains(investor)].groupby('city')['amount'].sum()
-        st.subheader('city Invested in')
+        st.subheader('City Invested in')
         fig3, ax3 = plt.subplots()
         ax3.pie(city_series, labels=city_series.index, autopct="%0.01f%%")
         st.pyplot(fig3)
@@ -184,7 +337,7 @@ def load_investor_details(investor):
 
     with col6:
         similar_investors = df[df['investors'].str.contains(investor)].groupby('subvertical')['amount'].sum()
-        st.subheader('similar investor')
+        st.subheader('Similar Investor')
         fig6, ax6 = plt.subplots()
         ax6.pie(similar_investors, labels=similar_investors.index, autopct="%0.01f%%")
         st.pyplot(fig6)
@@ -196,37 +349,42 @@ def load_startup_details(startup):
     with col1:
         # investment details
         industry_series = df[df['startup'].str.contains(startup)][['year', 'vertical', 'city', 'round']]
-        st.subheader('About startup')
+        st.subheader('About Startup')
         st.dataframe(industry_series)
 
     with col2:
         # inv_series = df[df['startup'].str.contains(startup)].groupby('investors').sum()
         inv_series = df[df['startup'].str.contains(startup)].groupby('investors')
-        st.subheader('investors')
+        st.subheader('Investors')
         st.dataframe(inv_series)
 
     # Subindustry
-    col1, col2, col3 = st.columns(3)
-    # with col1:
-    #     sub_series = df[df['startup'].str.contains(startup)].groupby('subvertical')['year'].sum()
-    #     st.subheader('subindustry')
-    #     fig9, ax9 = plt.subplots()
-    #     # ax9.pie(sub_series, labels=sub_series.index, autopct="%0.01f%%")
-    #     st.pyplot(fig9)
+    col1,col3 = st.columns(2)
 
-    with col2:
+    with col1:
+        sub_series = df[df['startup'].str.contains(startup)].groupby('subvertical')['year'].sum()
+        st.subheader('SubIndustry')
+        fig9, ax9 = plt.subplots()
+        ax9.pie(sub_series, labels=sub_series.index, autopct="%0.01f%%")
+        st.pyplot(fig9)
+
+    with col3:
         ver_series = df[df['startup'].str.contains(startup)].groupby('vertical')['year'].sum()
-        st.subheader('industry')
+        st.subheader('Industry')
         fig10, ax10 = plt.subplots()
-        ax10.pie(ver_series, labels=ver_series.index, autopct="%0.01f%%")
+        ax10.pie(ver_series, labels=ver_series.index, autopct="%0.01f%%",startangle=90)
         st.pyplot(fig10)
-
 
 st.sidebar.title('Startup Funding Analysis')
 
-option = st.sidebar.selectbox('Select One', ['Overall Analysis', 'Startup', 'Investor'])
+option = st.sidebar.selectbox('Select One',[ 'Visualization','Overall Analysis', 'Startup', 'Investor','Prediction'])
 
-if option == 'Overall Analysis':
+if option=='Prediction':
+    predict()
+elif option=='Visualization':
+    visualize()
+
+elif option == 'Overall Analysis':
     load_overall_analysis()
 
 

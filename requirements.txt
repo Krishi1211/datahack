@@ -4,5 +4,6 @@ matplotlib
 numpy
 seaborn
 openpyxl
-
+Image
+seaborn
 
